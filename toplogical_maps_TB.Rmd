@@ -1,0 +1,67 @@
+---
+title: "Topology_maps"
+author: "TomanB"
+date: "14 5 2020"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+```{r create topology maps with R}
+### load requisite packages
+library(tidyverse)
+library(ggridges)
+library(mapproj)
+library(marmap)
+library(data.table)
+library(ggrepel)
+library(RColorBrewer)
+
+### set wd
+setwd("D:/maps")
+
+### get data from NOAA (National Oceanic and Atmospheric Administration)
+coord <- getNOAA.bathy(lon1 = 7.8, lon2 = 9.5, lat1 = 46.0, lat2 = 47.25, resolution = 1)
+summary(coord)
+
+coord.df <- fortify.bathy(coord)
+colnames(coord.df) <- c("longitude","latitude","depth")
+
+coord.df$ndepth <- coord.df[,c("depth")] - min(coord.df$depth)
+
+# insert special location(s)
+sites <- data.frame(longitude = c(8.811742), latitude = c(46.132199),
+                    POI = c(""))
+
+# sites <- data.frame(longitude = c(8.801), latitude = c(46.125), POI = c("Casenzano"))
+
+# plot the transects with ggplot2 & ggridges
+ggplot(coord.df, aes(x = longitude, y = latitude, group = latitude, height = depth, scale = 4)) +
+      geom_density_ridges(stat = "identity", fill = "navy", alpha = 0.4, color = "navy") + xlab("") + ylab("") + theme_bw()
+
+# land
+ggplot() +
+  geom_density_ridges(coord.df, mapping=aes(x = longitude, y = latitude, group = latitude, height = depth, scale = 8),
+                      stat = "identity", fill = "forestgreen", alpha = 0.15, size = 0.7) + xlab("") + ylab("") +
+  geom_label_repel(color = "black", data = sites, mapping = aes(x = longitude, y = latitude , label = POI),
+                   size = 5, segment.size  = 0.3, nudge_x = c(0.1), nudge_y = c(-0.2)) +
+  geom_point(data = sites, aes(x = longitude, y = latitude), size = 5, shape = 21, fill = "firebrick3", alpha = 0.8) +
+  theme_classic()
+
+# ridge overlay
+ggplot() +
+  geom_density_ridges(coord.df, mapping=aes(x = longitude, y = latitude, group = latitude, height = ndepth, scale = 9),
+                      stat = "identity", fill = "blue", color = "black", alpha = 0.6, size = 0.1) +
+  geom_density_ridges(coord.df, mapping=aes(x = longitude, y = latitude, group = latitude, height = depth, scale = 8),
+                      stat = "identity", fill = "indianred", alpha = 0.7, size = 0.6) + xlab("") + ylab("") +
+  geom_label_repel(color = "black", data = sites, mapping = aes(x = longitude, y = latitude , label = POI),
+                   size = 4, segment.size  = 0.3, nudge_x = c(0.0), nudge_y = c(-1)) +
+  geom_point(data = sites, aes(x = longitude, y = latitude), size = 4, shape = 21, fill = "green", alpha = 0.9) +
+  theme_classic()
+
+```
